@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { spawn } from "node:child_process";
 
 const envFile = process.env.LIVE_MODEL_ENV_FILE;
@@ -17,6 +17,7 @@ if (!command) {
 let source;
 try {
   source = readFileSync(envFile, "utf8");
+  warnIfBroadlyReadable(envFile);
 } catch {
   console.error("The approved live-model env file could not be read.");
   process.exit(2);
@@ -33,6 +34,7 @@ let realtimeSource = source;
 if (realtimeEnvFile && realtimeEnvFile !== envFile) {
   try {
     realtimeSource = readFileSync(realtimeEnvFile, "utf8");
+    warnIfBroadlyReadable(realtimeEnvFile);
   } catch {
     console.error("The approved Realtime env file could not be read.");
     process.exit(2);
@@ -40,6 +42,10 @@ if (realtimeEnvFile && realtimeEnvFile !== envFile) {
 }
 const realtimeMatch = realtimeSource.match(/^OPENAI_API_KEY\s*=\s*(.+)$/m);
 const realtimeApiKey = realtimeMatch?.[1].trim().replace(/^(["'])|(["'])$/g, "");
+if (!realtimeApiKey) {
+  console.error("OPENAI_API_KEY is missing from the approved Realtime env file.");
+  process.exit(2);
+}
 
 const child = spawn(command, args, {
   stdio: "inherit",
@@ -48,7 +54,7 @@ const child = spawn(command, args, {
     LIVE_E2E: process.env.LIVE_E2E || "1",
     ANTHROPIC_API_KEY: apiKey,
     LEARNING_MODEL: process.env.LEARNING_MODEL || "claude-sonnet-5",
-    ...(realtimeApiKey ? { OPENAI_API_KEY: realtimeApiKey } : {}),
+    OPENAI_API_KEY: realtimeApiKey,
     REALTIME_MODEL: process.env.REALTIME_MODEL || "gpt-realtime-2.1",
   },
 });
@@ -66,3 +72,13 @@ child.on("exit", (code, signal) => {
   if (signal) process.kill(process.pid, signal);
   else process.exit(code ?? 1);
 });
+
+function warnIfBroadlyReadable(file) {
+  try {
+    if ((statSync(file).mode & 0o077) !== 0) {
+      console.warn("Warning: an approved credential file is readable by other local users. Prefer chmod 600.");
+    }
+  } catch {
+    // The subsequent read provides the authoritative error.
+  }
+}

@@ -11,7 +11,12 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "build:next": "next build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && npm run lint",
+    "preflight": "npm run secrets:check && npm run secrets:scan",
+    "secrets:check": "node scripts/check-secret-contract.mjs",
+    "secrets:runtime": "node scripts/check-secret-contract.mjs --runtime",
+    "secrets:scan": "node scripts/scan-secrets.mjs",
+    "secrets:scan:history": "node scripts/scan-secrets.mjs --history",
+    "test": "npm run preflight && npm run build && npm run lint",
     "test:e2e:live": "node scripts/run-with-live-model.mjs npx playwright test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern test-results",
     "db:generate": "drizzle-kit generate"

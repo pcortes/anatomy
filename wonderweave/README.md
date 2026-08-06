@@ -14,12 +14,14 @@ npm run dev
 npm run build
 ```
 
-Copy `.env.example` to an ignored local env file and supply server-only credentials. Never prefix model credentials with `NEXT_PUBLIC_`.
+Production credentials are stored as masked OpenAI Sites secrets. For local live work, keep credentials in a mode-`0600` file outside the repository and inject it through `LIVE_MODEL_ENV_FILE` and `LIVE_REALTIME_ENV_FILE`. Never prefix model credentials with `NEXT_PUBLIC_`.
 
 - `ANTHROPIC_API_KEY` powers lesson-artifact generation.
 - `OPENAI_API_KEY` mints short-lived Realtime client credentials.
 - `LEARNING_MODEL` defaults to `claude-sonnet-5`.
 - `REALTIME_MODEL` defaults to `gpt-realtime-2.1`.
+
+See the [secrets management runbook](docs/SECRETS_MANAGEMENT.md) for provisioning, rotation, leak response, and production verification.
 
 ## Product architecture
 
@@ -85,7 +87,8 @@ The suite proves a real generated artifact, a real ephemeral Realtime credential
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
-- `npm test`: production build plus lint
+- `npm run preflight`: validate the environment contract and scan for committed credential signatures
+- `npm test`: secret preflight, production build, and lint
 - `npm run test:e2e:live`: real provider and real-browser evidence; requires `LIVE_E2E=1`
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 

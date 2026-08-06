@@ -22,7 +22,9 @@ export default defineConfig({
       args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
     },
     screenshot: "only-on-failure",
-    trace: "retain-on-failure",
+    // Production authorization and short-lived voice credentials must never be
+    // captured in a retained trace.
+    trace: productionBaseUrl ? "off" : "retain-on-failure",
     video: "retain-on-failure",
   },
   webServer: productionBaseUrl ? undefined : {

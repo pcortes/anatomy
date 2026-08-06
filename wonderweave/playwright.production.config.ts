@@ -1,9 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PRODUCTION_BASE_URL;
+const sitesBypassBearer = process.env.SITES_BYPASS_BEARER;
 
 if (!baseURL) {
   throw new Error("PRODUCTION_BASE_URL is required for production browser evidence.");
+}
+if (new URL(baseURL).hostname.endsWith(".chatgpt.site") && !sitesBypassBearer) {
+  throw new Error("SITES_BYPASS_BEARER is required for private Sites browser evidence.");
 }
 
 export default defineConfig({

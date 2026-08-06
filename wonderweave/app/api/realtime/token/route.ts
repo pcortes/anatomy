@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
+import { readServerSecret, readServerSetting } from "@/app/lib/server-environment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,13 +19,8 @@ export async function POST() {
     "Cache-Control": "no-store, max-age=0",
     "X-Trace-Id": traceId,
   };
-  const bindings = env as unknown as Record<string, unknown>;
-  const apiKey = typeof bindings.OPENAI_API_KEY === "string"
-    ? bindings.OPENAI_API_KEY
-    : process.env.OPENAI_API_KEY;
-  const model = typeof bindings.REALTIME_MODEL === "string"
-    ? bindings.REALTIME_MODEL
-    : process.env.REALTIME_MODEL || DEFAULT_REALTIME_MODEL;
+  const apiKey = readServerSecret("OPENAI_API_KEY");
+  const model = readServerSetting("REALTIME_MODEL", DEFAULT_REALTIME_MODEL);
 
   if (!apiKey) {
     return NextResponse.json(

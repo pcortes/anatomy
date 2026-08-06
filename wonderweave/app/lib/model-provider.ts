@@ -1,4 +1,3 @@
-import { env } from "cloudflare:workers";
 import {
   LEARNING_ARTIFACT_JSON_SCHEMA,
   normalizeGeneratedArtifact,
@@ -7,6 +6,7 @@ import {
   type LearningArtifact,
 } from "./learning-artifact";
 import { buildGenerationPrompt, LEARNING_ARTIFACT_SYSTEM_PROMPT } from "./generation-prompt";
+import { readServerSecret, readServerSetting } from "./server-environment";
 
 export class ModelProviderError extends Error {
   constructor(
@@ -50,15 +50,10 @@ async function generateWithAttempt(
   previousIssues: string[],
   deadline: number,
 ): Promise<ProviderResult> {
-  const bindings = env as unknown as Record<string, unknown>;
-  const apiKey = typeof bindings.ANTHROPIC_API_KEY === "string"
-    ? bindings.ANTHROPIC_API_KEY
-    : process.env.ANTHROPIC_API_KEY;
+  const apiKey = readServerSecret("ANTHROPIC_API_KEY");
   if (!apiKey) throw new ModelProviderError("The live-model credential is not configured.", "configuration");
 
-  const model = typeof bindings.LEARNING_MODEL === "string"
-    ? bindings.LEARNING_MODEL
-    : process.env.LEARNING_MODEL || "claude-sonnet-5";
+  const model = readServerSetting("LEARNING_MODEL", "claude-sonnet-5");
   const remainingMs = deadline - Date.now();
   if (remainingMs < 5_000) throw new ModelProviderError("The model took too long to answer.", "timeout");
   const controller = new AbortController();
@@ -128,7 +123,6 @@ async function generateWithAttempt(
       event: "model_provider.rejected",
       status: response.status,
       type: payload.error?.type || "unknown",
-      diagnostic: payload.error?.message?.slice(0, 240),
     }));
     if (response.status === 401 || response.status === 403) {
       throw new ModelProviderError("The model credential was rejected.", "authentication", response.status);
