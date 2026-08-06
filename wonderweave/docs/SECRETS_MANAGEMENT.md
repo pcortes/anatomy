@@ -73,4 +73,4 @@ Do not place real values in `.env.example`. Run `npm run preflight` before every
 
 ## Release gate
 
-A release fails if either required production secret is absent, provider authentication fails, a permanent credential reaches browser code, a secret signature is present in Git, a production trace is enabled, or a live test credential remains active after the test window.
+A release fails if either required production secret is absent, provider authentication fails, a permanent credential reaches browser code, a secret signature is present in Git, a production trace is enabled, or the credential used for a live test is not rotated immediately afterward.
